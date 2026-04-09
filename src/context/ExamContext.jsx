@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useReducer } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useReducer, useEffect, useState } from 'react';
 import { SAMPLE_QUESTIONS } from '../data/sampleQuestions';
 import { MATHS_SAMPLE_QUESTIONS } from '../data/mathsSampleQuestions';
 import { CHEMISTRY_SAMPLE_QUESTIONS } from '../data/chemistrySampleQuestions';
@@ -32,6 +32,8 @@ const initialState = {
   isAlarm: false,
   showSecurityModal: false,
   submitted: false,
+  timeLeft: EXAM_DURATION,
+  timerActive: false,
 };
 
 function examReducer(state, action) {
@@ -65,7 +67,11 @@ function examReducer(state, action) {
     case 'HIDE_SECURITY_MODAL':
       return { ...state, showSecurityModal: false };
     case 'SUBMIT_EXAM':
-      return { ...state, submitted: true, showSecurityModal: false };
+      return { ...state, submitted: true, showSecurityModal: false, timerActive: false };
+    case 'START_TIMER':
+      return { ...state, timerActive: true };
+    case 'SET_TIME_LEFT':
+      return { ...state, timeLeft: action.payload };
     default:
       return state;
   }
@@ -84,6 +90,21 @@ export function ExamProvider({ children }) {
   const dismissAlarm = useCallback(() => dispatch({ type: 'DISMISS_ALARM' }), []);
   const submitExam = useCallback(() => dispatch({ type: 'SHOW_SECURITY_MODAL' }), []);
   const confirmSubmit = useCallback(() => dispatch({ type: 'SUBMIT_EXAM' }), []);
+  const startExamTimer = useCallback(() => dispatch({ type: 'START_TIMER' }), []);
+
+  useEffect(() => {
+    let interval;
+    if (state.timerActive && state.timeLeft > 0) {
+      interval = setInterval(() => {
+        dispatch({ type: 'SET_TIME_LEFT', payload: state.timeLeft - 1 });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [state.timerActive, state.timeLeft]);
+
+  const formattedTime = useMemo(() => {
+    return new Date(state.timeLeft * 1000).toISOString().substring(11, 19);
+  }, [state.timeLeft]);
 
   const value = useMemo(() => ({
     state,
@@ -97,6 +118,8 @@ export function ExamProvider({ children }) {
     dismissAlarm,
     submitExam,
     confirmSubmit,
+    startExamTimer,
+    formattedTime,
   }), [
     state,
     nextQuestion,
@@ -109,6 +132,8 @@ export function ExamProvider({ children }) {
     dismissAlarm,
     submitExam,
     confirmSubmit,
+    startExamTimer,
+    formattedTime,
   ]);
 
   return (

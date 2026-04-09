@@ -51,7 +51,12 @@ export default function AnswerBox({ answer = "", isActive, onAnswerChange, subje
   }, [displayText, isPartQuestion, isChemistryLongQuestion]);
 
   const hasLatexContent = (text) => {
-    return text.includes('\\') || text.includes('^') || text.includes('_');
+    if (!text) return false;
+    // Trigger math rendering on LaTeX commands (\), powers (^), subscripts (_),
+    // or common mathematical operators that deserve KaTeX formatting.
+    // Note: We use \ as the primary indicator for complex symbols.
+    const latexIndicators = /[\\^_⁰¹²³⁴⁵⁶⁷⁸⁹₀₁₂₃₄₅₆₇₈₉=+\-×÷±<>\n]|\\int|\\sum|\\sqrt|\\ge|\\le|\\pm|\\neq/;
+    return latexIndicators.test(text);
   };
 
   const handleInput = (e) => {
@@ -164,6 +169,7 @@ export default function AnswerBox({ answer = "", isActive, onAnswerChange, subje
             )
           })}
         </div>
+<<<<<<< HEAD
       ) : hasChemistryEquation ? (
         <div style={{ padding: '24px', minHeight: '150px' }}>
           <ChemistryEquationRenderer text={displayText} />
@@ -171,6 +177,17 @@ export default function AnswerBox({ answer = "", isActive, onAnswerChange, subje
       ) : (subjectMode === 'maths') && answer && hasLatexContent(answer) ? (
         <div style={{ padding: '24px', minHeight: '150px', fontSize: '20px' }}>
           <EquationRenderer latex={answer} inline={false} />
+=======
+      ) : (['maths', 'chemistry', 'general'].includes(subjectMode) || !subjectMode) && answer && hasLatexContent(answer) ? (
+        <div style={{ padding: '24px', minHeight: '150px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {answer.split('\n').map((line, idx) => (
+            line.trim() ? (
+              <EquationRenderer key={`eq-${idx}`} latex={line.trim()} inline={false} />
+            ) : (
+              <div key={`br-${idx}`} style={{ height: '1.2em' }} /> // Preserve blank lines
+            )
+          ))}
+>>>>>>> 66c5f6ef70bf5482aebe4392f1db49b7e161ebbd
         </div>
       ) : (
         <div 
